@@ -58,7 +58,7 @@ FROM openwhisk/dockerskeleton:latest as php-perl-build
 ## install pre-build deps
 RUN apk del perl && apk update && \
     apk add make build-base perl-dev perl-app-cpanminus
-RUN cpanm JSON JSON::Create pp
+RUN cpanm Encode JSON::Create IPC::Run pp
 
 # copy handler.pl
 WORKDIR /tmp/php-perl-build
@@ -77,6 +77,9 @@ COPY --from=php-build /usr/local/bin/php-cgi /usr/local/bin
 
 # get the php handler executable
 COPY --from=php-perl-build  /tmp/php-perl-build/exec /action/exec
+
+# copy php source files
+COPY ./www /var/www
 
 # Install php shared libraries
 RUN apk update && apk add libpng libxml2
