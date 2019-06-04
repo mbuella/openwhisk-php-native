@@ -1,4 +1,4 @@
-use IPC::Run qw(run);
+use IPC::Run3;
 use Encode 'encode';
 use JSON;
 use JSON::Create create_json;
@@ -28,26 +28,41 @@ sub main
     foreach $variable (keys %php_env_vars) {
         $ENV{$variable} = $php_env_vars{$variable};
     }
-    
-    # execute php file
-    run ["php-cgi", "-f", "index.php"], ">", \my $output;
 
-    # parse response
-    my ($headerString, $body) = split /\R\R/, $output;
-    my @headerLines = split /\R/, $headerString;
     my %headers = ();
-    foreach my $line (@headerLines) {
-        my ($key, $val) = split /: /, $line;
-        $headers{$key} = $val;
+    my %response = ();
+    my $body = "";
+
+    # pass input to stdin
+    my $in = $requestBody;
+
+    my $status = run3 ["php-cgi", "-f", $scriptPath], \$stdin, \my $stdout, \my $stderr;
+
+    if (!$err) {   
+        $statusCode = 200;     
+        my $headerString = "";
+        ($headerString, $body) = split /\R\R/, $stdout;
+        my @headerLines = split /\R/, $headerString;
+        foreach my $line (@headerLines) {
+            my ($key, $val) = split /: /, $line;
+            $headers{$key} = $val;
+        }
+    } else {
+        $statusCode = 500;
+        $body = $err;
+        %headers = (
+            'Status' => "500 Internal Server Error",
+            'X-Powered-By' => "PHP/7.2.18",
+            'Content-type' => "text/html; charset=UTF-8"
+        );
     }
     
-    # output
-    my %response = (
-        statusCode => 200,
+    %response = (
+        statusCode => $statusCode,
         headers => \%headers,
         body => sprintf("%s", $body),
     );
-
+    
     return create_json(\%response);
 }
 
