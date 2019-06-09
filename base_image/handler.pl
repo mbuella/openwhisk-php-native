@@ -2,6 +2,9 @@ use IPC::Run3;
 use Encode 'encode';
 use JSON;
 use JSON::Create create_json;
+use MIME::Base64;
+use Switch;
+use Data::Dumper;
 
 sub main
 {
@@ -12,8 +15,23 @@ sub main
     my $requestUri = $params->{'__ow_path'} or '/';
     my $scriptPath = '/var/www/index.php';
     my $queryString = $params->{'__ow_query'} or '';
-    my $requestBody = '';
 
+    # get correct body content
+    # decode base64 body if it's binary (non-text)
+    my $requestBody = '';
+    switch ($requestMethod) {
+        case "POST" {
+            if ((rindex $httpHeaders->{'content-type'}, "text/", 0) >= 0) {
+               next;
+            }
+            $requestBody = decode_base64($params->{'__ow_body'});
+        }
+        case "GET" {}
+        else {
+            $requestBody = $params->{'__ow_body'};
+        }
+    }
+    
     # build php environment vars
     my %php_env_vars = (
         'REDIRECT_STATUS' => 200,
