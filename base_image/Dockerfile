@@ -58,7 +58,7 @@ FROM openwhisk/dockerskeleton:latest as php-perl-build
 ## install pre-build deps
 RUN apk del perl && apk update && \
     apk add make build-base perl-dev perl-app-cpanminus
-RUN cpanm Encode JSON JSON::Create IPC::Run3 pp
+RUN cpanm Encode JSON JSON::Create IPC::Run3 MIME::Base64 Switch pp
 
 # copy handler.pl
 WORKDIR /tmp/php-perl-build
