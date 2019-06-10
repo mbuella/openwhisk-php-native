@@ -4,7 +4,6 @@ use JSON;
 use JSON::Create create_json;
 use MIME::Base64;
 use Switch;
-use Data::Dumper;
 
 sub main
 {
@@ -70,7 +69,9 @@ sub main
     if (!$err) {   
         $statusCode = 200;     
         my $headerString = "";
-        ($headerString, $body) = split /\R\R/, $stdout;
+        ($headerString, %bodyFragments) = split /\r\n\r\n/, $stdout;
+        $body = join "\r\n\r\n", %bodyFragments;
+        $body =~ s/\r\n\r\n$//;
         my @headerLines = split /\R/, $headerString;
         foreach my $line (@headerLines) {
             my ($key, $val) = split /: /, $line;
